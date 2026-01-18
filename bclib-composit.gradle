@@ -1,0 +1,10 @@
+plugins {
+	id 'java-library'
+	id 'idea'
+	id 'eclipse'
+	id 'net.minecraftforge.gradle' version "${forgegradle_version}"
+	id 'org.spongepowered.mixin' version "0.7.+"
+	id 'maven-publish'
+}
+
+apply from: "bclib.gradle"

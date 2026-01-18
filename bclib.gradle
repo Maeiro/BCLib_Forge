@@ -1,0 +1,169 @@
+buildscript {
+    dependencies {
+        classpath 'org.kohsuke:github-api:1.114'
+    }
+
+    repositories {
+        gradlePluginPortal()
+    }
+}
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+archivesBaseName = project.archives_base_name
+version = project.mod_version
+group = project.maven_group
+
+repositories {
+    maven { url "https://maven.minecraftforge.net" }
+    maven { url "https://maven.dblsaiko.net/" }
+    maven { url "https://maven.shedaniel.me/" }
+    maven { url 'https://maven.blamejared.com' }
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://maven.terraformersmc.com/releases' }
+    maven { url 'https://maven.terraformersmc.com' }
+    maven { url 'https://maven.ambertation.de/releases' }
+    maven { url 'https://repo.spongepowered.org/repository/maven-public/' }
+}
+
+def local_wunderlib = findProject(':WunderLib') != null
+
+minecraft {
+    mappings channel: "official", version: project.minecraft_version
+    accessTransformer = file("src/main/resources/META-INF/accesstransformer.cfg")
+    runs {
+        client {
+            workingDirectory project.file("run")
+            property "forge.logging.markers", "REGISTRIES"
+            property "forge.logging.console.level", "debug"
+        }
+        server {
+            workingDirectory project.file("run")
+            property "forge.logging.markers", "REGISTRIES"
+            property "forge.logging.console.level", "debug"
+        }
+        data {
+            workingDirectory project.file("run")
+            args "--mod", project.mod_id,
+                    "--all",
+                    "--output", file("src/main/generated").toString(),
+                    "--existing", file("src/main/resources").toString()
+        }
+    }
+}
+
+if (!project.state.executed && project.extensions.findByName("mixin") != null) {
+    mixin {
+        add sourceSets.main, "${project.mod_id}.refmap.json"
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs += [
+                    'src/main/generated'
+            ]
+        }
+    }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
+
+    annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
+
+    compileOnly "dev.emi:emi-forge:${emi_version}:api"
+    runtimeOnly fg.deobf("dev.emi:emi-forge:${emi_version}")
+
+    println "Using local WunderLib: ${local_wunderlib}"
+    if (local_wunderlib) {
+        implementation project(path: ":WunderLib", configuration: 'dev')
+    } else {
+        implementation "de.ambertation.wunderlib:wunderlib:${project.wunderlib_version}"
+    }
+}
+
+processResources {
+    println "Version: ${project.mod_version}"
+    inputs.property "version", project.mod_version
+    inputs.property "mod_id", project.mod_id
+    inputs.property "mod_name", project.mod_name
+    inputs.property "minecraft_version", project.minecraft_version
+    inputs.property "forge_version", project.forge_version
+
+    filesMatching("META-INF/mods.toml") {
+        expand(
+                "mod_id": project.mod_id,
+                "mod_name": project.mod_name,
+                "version": project.mod_version,
+                "minecraft_version": project.minecraft_version,
+                "forge_version": project.forge_version
+        )
+    }
+}
+
+// ensure that the encoding is set to UTF-8, no matter what the system default is
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+    it.options.release = 17
+}
+
+javadoc {
+    options.tags = ["reason"]
+    options.stylesheetFile = new File(projectDir, "javadoc.css");
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes(
+                "MixinConfigs": String.join(",",
+                        "bclib.mixins.common.json",
+                        "bclib.mixins.client.json",
+                        "together.mixins.common.json",
+                        "together.mixins.client.json",
+                        "ui.mixins.client.json"
+                )
+        )
+    }
+    from "LICENSE"
+    from "LICENSE.ASSETS"
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+configurations {
+    dev {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+}
+
+artifacts {
+    dev jar
+}
+
+def distDir = new File(rootProject.projectDir.parentFile, "betterx-dist 1.20.1")
+tasks.register("copyDistJars", Copy) {
+    dependsOn(tasks.named("jar"))
+    from(tasks.named("jar"))
+    into(distDir)
+}
+
+tasks.named("build") {
+    finalizedBy("copyDistJars")
+}

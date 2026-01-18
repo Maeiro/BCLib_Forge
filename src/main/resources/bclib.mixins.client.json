@@ -1,0 +1,28 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.betterx.bclib.mixin.client",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "bclib.refmap.json",
+  "client": [
+    "AnvilScreenMixin",
+    "AtlasSetMixin",
+    "BlockMixin",
+    "ClientLevelMixin",
+    "ClientPacketListenerMixin",
+    "ClientRecipeBookMixin",
+    "FogRendererMixin",
+    "ForgeHooksClientMixin",
+    "ItemColorsMixin",
+    "LayerDefinitionsMixin",
+    "LevelRendererMixin",
+    "MinecraftMixin",
+    "ModelBakeryMixin",
+    "ModelManagerMixin",
+    "WorldCreationUIStateMixin",
+    "boat.BoatRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
