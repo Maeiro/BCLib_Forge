@@ -72,6 +72,9 @@ public class BCLib {
 
     public BCLib() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        // Ensure recipe types are registered before RegisterEvent runs.
+        AnvilRecipe.register();
+        AlloyingRecipe.register();
         modBus.addListener(BCLRecipeManager::register);
         modBus.addListener(this::onCommonSetup);
     }
