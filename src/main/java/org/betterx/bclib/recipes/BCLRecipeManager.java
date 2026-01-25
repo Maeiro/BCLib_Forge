@@ -64,19 +64,12 @@ public class BCLRecipeManager {
 
     public static boolean exists(ItemLike item) {
         if (item instanceof Block) {
-            Block block = (Block) item;
-            ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
-            if (blockKey == null || blockKey == BuiltInRegistries.BLOCK.getDefaultKey()) {
-                return false;
-            }
-            ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(block.asItem());
-            return itemKey != null && itemKey != BuiltInRegistries.ITEM.getDefaultKey();
+            return BuiltInRegistries.BLOCK.getKey((Block) item) != BuiltInRegistries.BLOCK.getDefaultKey();
         }
         if (item == Items.AIR) {
             return false;
         }
-        ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item.asItem());
-        return itemKey != null && itemKey != BuiltInRegistries.ITEM.getDefaultKey();
+        return BuiltInRegistries.ITEM.getKey(item.asItem()) != BuiltInRegistries.ITEM.getDefaultKey();
     }
 
     private final static HashSet<ResourceLocation> disabledRecipes = new HashSet<>();

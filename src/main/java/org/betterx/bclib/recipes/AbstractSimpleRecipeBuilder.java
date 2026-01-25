@@ -12,6 +12,9 @@ import net.minecraft.world.level.ItemLike;
 
 public abstract class AbstractSimpleRecipeBuilder<T extends AbstractSimpleRecipeBuilder> extends AbstractBaseRecipeBuilder<T> {
     protected Ingredient primaryInput;
+    private ItemLike[] primaryInputItems;
+    private TagKey<Item> primaryInputTag;
+    private boolean primaryInputResolved;
 
     protected AbstractSimpleRecipeBuilder(ResourceLocation id, ItemLike output) {
         this(id, BCLib.isDatagen() ? new ItemStack(output, 1) : ItemStack.EMPTY);
@@ -23,16 +26,19 @@ public abstract class AbstractSimpleRecipeBuilder<T extends AbstractSimpleRecipe
 
     public T setPrimaryInput(ItemLike... inputs) {
         if (!BCLib.isDatagen()) return (T) this;
-        for (ItemLike item : inputs) {
-            this.alright &= RecipeHelper.exists(item);
-        }
-        this.primaryInput = Ingredient.of(inputs);
+        this.primaryInputItems = inputs;
+        this.primaryInputTag = null;
+        this.primaryInput = null;
+        this.primaryInputResolved = false;
         return (T) this;
     }
 
     public T setPrimaryInput(TagKey<Item> input) {
         if (!BCLib.isDatagen()) return (T) this;
-        this.primaryInput = Ingredient.of(input);
+        this.primaryInputTag = input;
+        this.primaryInputItems = null;
+        this.primaryInput = null;
+        this.primaryInputResolved = false;
         return (T) this;
     }
 
@@ -49,8 +55,25 @@ public abstract class AbstractSimpleRecipeBuilder<T extends AbstractSimpleRecipe
         return (T) this;
     }
 
+    protected void resolvePrimaryInput(boolean force) {
+        if (primaryInputResolved && !force) {
+            return;
+        }
+        primaryInputResolved = true;
+        if (primaryInputTag != null) {
+            primaryInput = Ingredient.of(primaryInputTag);
+            return;
+        }
+        if (primaryInputItems != null) {
+            for (ItemLike item : primaryInputItems) {
+                this.alright &= RecipeHelper.exists(item);
+            }
+            primaryInput = Ingredient.of(primaryInputItems);
+        }
+    }
 
     protected boolean checkRecipe() {
+        resolvePrimaryInput(false);
         if (primaryInput == null) {
             BCLib.LOGGER.warning(
                     "Primary input for Recipe can't be 'null', recipe {} will be ignored!",
